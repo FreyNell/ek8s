@@ -4,24 +4,33 @@ import './App.css';
 import Pod from './components/Pod';
 
 function App() {
+	const [contexts, setContexts] = useState([]);
+	const [currentContext, setCurrentContext] = useState("");
 	const [namespaces,setNamespaces] = useState([]);
-	
-	window.k8s.receiveContexts((_event,value)=>setNamespaces(value));
 
 	function getContexts(){
 		window.k8s.getContexts();
 	}
 
-	useEffect(()=>{
-	},[namespaces]);
-  return (
-    <div className="App">
-	  <Pod></Pod>
-	  <button onClick={()=>getContexts()}>Contexts</button>
-	  {namespaces.map((x,i)=><div key={"namespace"+i}>{x.cluster}</div>)}
-	</div>
+	function getCurrentContext(){
+		window.k8s.getCurrentContext();
+	}
 
-  );
+	useEffect(()=>{
+		window.k8s.renderContexts((_event,value)=>setContexts(value));
+		window.k8s.renderCurrentContext((_event,value)=>setCurrentContext(value));
+		getContexts();
+		getCurrentContext();
+	},[]);
+
+	return (
+    	<div className="App">
+			<h3 className="CurrentContext">{currentContext}</h3>
+	  		<Pod></Pod>
+	  		{namespaces.map((x,i)=><div key={"namespace"+i}>{x.cluster}</div>)}
+	  		<button onClick={()=>getContexts()}>tap</button>
+		</div>
+  	);
 }
 
 export default App;
