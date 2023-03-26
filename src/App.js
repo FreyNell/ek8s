@@ -1,37 +1,92 @@
-import { useState, useEffect } from 'react';
-import logo from './logo.svg';
-import './App.css';
-import Pod from './components/Pod';
+import React, { useState, useEffect } from 'react';
+import { List, ListItem, ListItemText, Select, MenuItem } from '@mui/material';
+import { KubernetesClient } from './kubernetes-client';
 
 function App() {
-	const [contexts, setContexts] = useState([]);
-	const [currentContext, setCurrentContext] = useState("");
-	const [namespaces,setNamespaces] = useState([]);
+  const [contexts, setContexts] = useState([]);
+  const [currentContext, setCurrentContext] = useState('');
+  const [namespaces, setNamespaces] = useState([]);
+  const [currentNamespace, setCurrentNamespace] = useState('');
+  const [pods, setPods] = useState([]);
 
-	function getContexts(){
-		window.k8s.getContexts();
-	}
+  useEffect(() => {
+    const client = new KubernetesClient();
 
-	function getCurrentContext(){
-		window.k8s.getCurrentContext();
-	}
+    // Get available contexts
+    client.getContexts().then((contexts) => {
+      setContexts(contexts);
+      setCurrentContext(contexts[0]);
+    });
 
-	useEffect(()=>{
-		window.k8s.renderContexts((_event,value)=>setContexts(value));
-		window.k8s.renderCurrentContext((_event,value)=>setCurrentContext(value));
-		getContexts();
-		getCurrentContext();
-	},[]);
+    // Get namespaces for current context
+    client.getNamespaces(currentContext).then((namespaces) => {
+      setNamespaces(namespaces);
+      setCurrentNamespace(namespaces[0]);
+      console.log(namespaces);
+    });
+  }, []);
 
-	return (
-    	<div className="App">
-			<h3 className="CurrentContext">{currentContext}</h3>
-	  		<Pod></Pod>
-	  		{namespaces.map((x,i)=><div key={"namespace"+i}>{x.cluster}</div>)}
-	  		<button onClick={()=>getContexts()}>tap</button>
-		</div>
-  	);
+  useEffect(() => {
+    const client = new KubernetesClient();
+
+    // Get namespaces for current context
+    client.getNamespaces(currentContext).then((namespaces) => {
+      setNamespaces(namespaces);
+      setCurrentNamespace(namespaces[0]);
+      console.log(namespaces)
+    });
+
+    // Get pods for current context and namespace
+    client.getPods(currentContext, currentNamespace).then((pods) => {
+      setPods(pods);
+    });
+  }, [currentContext]);
+
+  useEffect(() => {
+    const client = new KubernetesClient();
+
+    // Get pods for current context and namespace
+    client.getPods(currentContext, currentNamespace).then((pods) => {
+      setPods(pods);
+    });
+  }, [currentNamespace]);
+
+  const handleContextChange = (event) => {
+    setCurrentContext(event.target.value);
+  };
+
+  const handleNamespaceChange = (event) => {
+    setCurrentNamespace(event.target.value);
+  };
+
+  return (
+    <div>
+      <h1>Kubernetes Pods</h1>
+      <div>
+        <Select value={currentContext} onChange={handleContextChange}>
+          {contexts.map((context) => (
+            <MenuItem key={context} value={context}>
+              {context.name}
+            </MenuItem>
+          ))}
+        </Select>
+        <Select value={currentNamespace} onChange={handleNamespaceChange}>
+          {namespaces.map((namespace) => (
+            <MenuItem key={namespace} value={namespace}>
+              {namespace}
+            </MenuItem>
+          ))}
+        </Select>
+      </div>
+      <List>
+        {pods.map((pod) => (
+          <ListItem key={pod.metadata.name}>
+            <ListItemText primary={pod.metadata.name} />
+          </ListItem>
+        ))}
+      </List>
+    </div>
+  );
 }
 
 export default App;
-
