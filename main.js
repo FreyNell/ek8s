@@ -78,7 +78,7 @@ app.whenReady().then(() => {
 	ipcMain.on('getPods', async (event, arg) => {
 		try {
 			// Obtener la lista de pods de Kubernetes en el namespace especificado
-			const pods = await k8sApi.listNamespacedPod(arg);
+			const pods = await k8sApi.listNamespacedPod(arg.namespace);
 
 			// Enviar la lista de pods al archivo de preload
 			event.reply('receivePods', pods.body.items);

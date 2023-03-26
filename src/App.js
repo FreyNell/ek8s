@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { List, ListItem, ListItemText, Select, MenuItem } from '@mui/material';
+import { Table, TableHead, TableRow, TableCell, TableBody, Select, MenuItem } from '@mui/material';
 import { KubernetesClient } from './kubernetes-client';
 
 function App() {
@@ -22,7 +22,6 @@ function App() {
     client.getNamespaces(currentContext).then((namespaces) => {
       setNamespaces(namespaces);
       setCurrentNamespace(namespaces[0]);
-      console.log(namespaces);
     });
   }, []);
 
@@ -33,7 +32,6 @@ function App() {
     client.getNamespaces(currentContext).then((namespaces) => {
       setNamespaces(namespaces);
       setCurrentNamespace(namespaces[0]);
-      console.log(namespaces)
     });
 
     // Get pods for current context and namespace
@@ -78,13 +76,28 @@ function App() {
           ))}
         </Select>
       </div>
-      <List>
-        {pods.map((pod) => (
-          <ListItem key={pod.metadata.name}>
-            <ListItemText primary={pod.metadata.name} />
-          </ListItem>
-        ))}
-      </List>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell>Name</TableCell>
+            <TableCell>Ready</TableCell>
+            <TableCell>Status</TableCell>
+            <TableCell>Restarts</TableCell>
+            <TableCell>Age</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {pods.map((pod) => (
+            <TableRow key={pod.metadata.uid}>
+              <TableCell>{pod.metadata.name}</TableCell>
+              <TableCell>{`${pod.status.readyReplicas || 0}/${pod.spec.replicas}`}</TableCell>
+              <TableCell>{pod.status.phase}</TableCell>
+              <TableCell>{pod.status.containerStatuses[0].restartCount}</TableCell>
+              <TableCell>{new Date(pod.metadata.creationTimestamp).toLocaleString()}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }
