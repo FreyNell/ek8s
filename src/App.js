@@ -90,7 +90,7 @@ function App() {
           {pods.map((pod) => (
             <TableRow key={pod.metadata.uid}>
               <TableCell>{pod.metadata.name}</TableCell>
-              <TableCell>{`${pod.status.readyReplicas || 0}/${pod.spec.replicas}`}</TableCell>
+              <TableCell>{`${pod.status.containerStatuses.reduce((total, currentValue, currentIndex, arr) => currentValue.ready ? 1 : 0 , 0)}/${pod.status.containerStatuses.length}`}</TableCell>
               <TableCell>{pod.status.phase}</TableCell>
               <TableCell>{pod.status.containerStatuses[0].restartCount}</TableCell>
               <TableCell>{new Date(pod.metadata.creationTimestamp).toLocaleString()}</TableCell>
