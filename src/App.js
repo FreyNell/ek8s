@@ -1,60 +1,48 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { Table, TableHead, TableRow, TableCell, TableBody, Select, MenuItem } from '@mui/material';
 import { KubernetesClient } from './kubernetes-client';
+import { setContexts, setCurrentContext, setNamespaces, setCurrentNamespace, setPods } from './store/kubeSlice';
 
 function App() {
-  const [contexts, setContexts] = useState([]);
-  const [currentContext, setCurrentContext] = useState('');
-  const [namespaces, setNamespaces] = useState([]);
-  const [currentNamespace, setCurrentNamespace] = useState('');
-  const [pods, setPods] = useState([]);
+  const dispatch = useDispatch();
+  const { contexts, currentContext, namespaces, currentNamespace, pods } = useSelector((state) => state.kube);
 
   useEffect(() => {
     const client = new KubernetesClient();
 
     // Get available contexts
     client.getContexts().then((contexts) => {
-      setContexts(contexts);
-      setCurrentContext(contexts[0]);
+      dispatch(setContexts(contexts));
+      dispatch(setCurrentContext(contexts[0]));
     });
-
-    // Get namespaces for current context
-    client.getNamespaces(currentContext).then((namespaces) => {
-      setNamespaces(namespaces);
-      setCurrentNamespace(namespaces[0]);
-    });
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     const client = new KubernetesClient();
 
     // Get namespaces for current context
     client.getNamespaces(currentContext).then((namespaces) => {
-      setNamespaces(namespaces);
-      setCurrentNamespace(namespaces[0]);
+      dispatch(setNamespaces(namespaces));
+      dispatch(setCurrentNamespace(namespaces[0]));
     });
-
-    // Get pods for current context and namespace
-    client.getPods(currentContext, currentNamespace).then((pods) => {
-      setPods(pods);
-    });
-  }, [currentContext]);
+  }, [currentContext, dispatch]);
 
   useEffect(() => {
     const client = new KubernetesClient();
 
     // Get pods for current context and namespace
     client.getPods(currentContext, currentNamespace).then((pods) => {
-      setPods(pods);
+      dispatch(setPods(pods));
     });
-  }, [currentNamespace]);
+  }, [currentContext, currentNamespace, dispatch]);
 
   const handleContextChange = (event) => {
-    setCurrentContext(event.target.value);
+    dispatch(setCurrentContext(event.target.value));
   };
 
   const handleNamespaceChange = (event) => {
-    setCurrentNamespace(event.target.value);
+    dispatch(setCurrentNamespace(event.target.value));
   };
 
   return (
@@ -87,15 +75,17 @@ function App() {
           </TableRow>
         </TableHead>
         <TableBody>
-          {pods.map((pod) => (
-            <TableRow key={pod.metadata.uid}>
-              <TableCell>{pod.metadata.name}</TableCell>
-              <TableCell>{`${pod.status.containerStatuses.reduce((total, currentValue, currentIndex, arr) => currentValue.ready ? 1 : 0 , 0)}/${pod.status.containerStatuses.length}`}</TableCell>
-              <TableCell>{pod.status.phase}</TableCell>
-              <TableCell>{pod.status.containerStatuses[0].restartCount}</TableCell>
-              <TableCell>{new Date(pod.metadata.creationTimestamp).toLocaleString()}</TableCell>
-            </TableRow>
-          ))}
+          {pods.map((pod) => {
+            return (
+              <TableRow key={pod.metadata.uid}>
+                <TableCell>{pod.metadata.name}</TableCell>
+                <TableCell>{`${pod.status.containerStatuses.reduce((total, currentValue, currentIndex, arr) => currentValue.ready ? 1 : 0, 0)}/${pod.status.containerStatuses.length}`}</TableCell>
+                <TableCell>{pod.status.phase}</TableCell>
+                <TableCell>{pod.status.containerStatuses[0].restartCount}</TableCell>
+                <TableCell>{new Date(pod.metadata.creationTimestamp).toLocaleString()}</TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>
